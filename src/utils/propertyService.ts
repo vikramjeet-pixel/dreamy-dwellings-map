@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Property } from "@/utils/types";
+import { Json } from "@/integrations/supabase/types";
 
 interface FetchPropertiesOptions {
   filters?: {
@@ -16,6 +17,44 @@ interface FetchPropertiesOptions {
   limit?: number;
   featured?: boolean;
 }
+
+// Helper function to transform address JSON
+const transformAddress = (addressJson: Json): { street: string; city: string; state: string; zip: string } => {
+  if (typeof addressJson === 'object' && addressJson !== null) {
+    return {
+      street: (addressJson as any).street || '',
+      city: (addressJson as any).city || '',
+      state: (addressJson as any).state || '',
+      zip: (addressJson as any).zip || '',
+    };
+  }
+  // Default fallback if the data is malformed
+  return { street: '', city: '', state: '', zip: '' };
+};
+
+// Helper function to transform location JSON
+const transformLocation = (locationJson: Json): { lat: number; lng: number } => {
+  if (typeof locationJson === 'object' && locationJson !== null) {
+    return {
+      lat: parseFloat((locationJson as any).lat) || 0,
+      lng: parseFloat((locationJson as any).lng) || 0,
+    };
+  }
+  // Default fallback if the data is malformed
+  return { lat: 0, lng: 0 };
+};
+
+// Helper function to ensure type is one of the allowed values
+const transformPropertyType = (type: string): "house" | "apartment" | "condo" | "townhouse" => {
+  const validTypes = ["house", "apartment", "condo", "townhouse"];
+  return validTypes.includes(type) ? (type as "house" | "apartment" | "condo" | "townhouse") : "house";
+};
+
+// Helper function to ensure status is one of the allowed values
+const transformPropertyStatus = (status: string): "sale" | "rent" | "sold" | "pending" => {
+  const validStatuses = ["sale", "rent", "sold", "pending"];
+  return validStatuses.includes(status) ? (status as "sale" | "rent" | "sold" | "pending") : "sale";
+};
 
 export const fetchProperties = async (options: FetchPropertiesOptions = {}): Promise<Property[]> => {
   try {
@@ -108,18 +147,18 @@ export const fetchProperties = async (options: FetchPropertiesOptions = {}): Pro
       id: item.id,
       title: item.title,
       description: item.description,
-      price: Number(item.price), // Ensure it's a number
-      address: item.address,
+      price: Number(item.price),
+      address: transformAddress(item.address),
       beds: item.beds,
       baths: item.baths,
       sqft: item.sqft,
-      type: item.type,
+      type: transformPropertyType(item.type),
       yearBuilt: item.year_built,
       images: item.images,
-      featured: item.featured,
+      featured: item.featured || false,
       amenities: item.amenities,
-      location: item.location,
-      status: item.status,
+      location: transformLocation(item.location),
+      status: transformPropertyStatus(item.status),
     }));
     
     return properties;
@@ -152,17 +191,17 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       title: data.title,
       description: data.description,
       price: Number(data.price),
-      address: data.address,
+      address: transformAddress(data.address),
       beds: data.beds,
       baths: data.baths,
       sqft: data.sqft,
-      type: data.type,
+      type: transformPropertyType(data.type),
       yearBuilt: data.year_built,
       images: data.images,
-      featured: data.featured,
+      featured: data.featured || false,
       amenities: data.amenities,
-      location: data.location,
-      status: data.status,
+      location: transformLocation(data.location),
+      status: transformPropertyStatus(data.status),
     };
     
     return property;
@@ -192,17 +231,17 @@ export const fetchSimilarProperties = async (property: Property, limit = 3): Pro
       title: item.title,
       description: item.description,
       price: Number(item.price),
-      address: item.address,
+      address: transformAddress(item.address),
       beds: item.beds,
       baths: item.baths,
       sqft: item.sqft,
-      type: item.type,
+      type: transformPropertyType(item.type),
       yearBuilt: item.year_built,
       images: item.images,
-      featured: item.featured,
+      featured: item.featured || false,
       amenities: item.amenities,
-      location: item.location,
-      status: item.status,
+      location: transformLocation(item.location),
+      status: transformPropertyStatus(item.status),
     }));
     
     return properties;
