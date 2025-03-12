@@ -41,7 +41,7 @@ export default function Hero() {
       <div className="relative h-full max-w-7xl mx-auto px-6 md:px-12 flex flex-col justify-center">
         <div className="max-w-2xl animate-slide-in">
           <h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight mb-6">
-            Discover Your Dream Property
+            Discover Your Dream with Vikramjeet Singh's Real Estates 
           </h1>
           <p className="text-white/80 text-lg md:text-xl mb-8 leading-relaxed">
             Explore our curated collection of exceptional properties, from modern urban apartments to stunning coastal retreats.
