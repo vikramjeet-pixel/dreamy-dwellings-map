@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import PropertyCard from "@/components/PropertyCard";
 import FilterBar from "@/components/FilterBar";
 import { FilterOptions, Property } from "@/utils/types";
-import { properties } from "@/utils/mockData";
+import { fetchProperties } from "@/utils/propertyService";
 import { GridIcon, List, SlidersHorizontal } from "lucide-react";
 
 const Properties = () => {
@@ -19,7 +20,6 @@ const Properties = () => {
     amenities: [],
     status: ['sale', 'rent'],
   });
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>(properties);
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<string>('featured');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -37,71 +37,22 @@ const Properties = () => {
     }
   }, [location.search]);
 
-  // Apply filters whenever they change
-  useEffect(() => {
-    let result = [...properties];
-    
-    // Apply price filter
-    result = result.filter(
-      property => 
-        property.price >= filters.priceRange[0] && 
-        property.price <= filters.priceRange[1]
-    );
-    
-    // Apply beds filter
-    if (filters.beds !== null) {
-      result = result.filter(property => property.beds >= filters.beds!);
-    }
-    
-    // Apply baths filter
-    if (filters.baths !== null) {
-      result = result.filter(property => property.baths >= filters.baths!);
-    }
-    
-    // Apply home type filter
-    if (filters.homeType.length > 0) {
-      result = result.filter(property => 
-        filters.homeType.includes(property.type)
-      );
-    }
-    
-    // Apply sqft filter
-    if (filters.minSqft !== null) {
-      result = result.filter(property => property.sqft >= filters.minSqft!);
-    }
-    
-    // Apply amenities filter
-    if (filters.amenities.length > 0) {
-      result = result.filter(property => 
-        filters.amenities.every(amenity => 
-          property.amenities.includes(amenity)
-        )
-      );
-    }
-    
-    // Apply status filter
-    if (filters.status.length > 0) {
-      result = result.filter(property => 
-        filters.status.includes(property.status)
-      );
-    }
-    
-    // Sort results
-    if (sortBy === 'price-asc') {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price-desc') {
-      result.sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'newest') {
-      result.sort((a, b) => b.yearBuilt - a.yearBuilt);
-    } else if (sortBy === 'oldest') {
-      result.sort((a, b) => a.yearBuilt - b.yearBuilt);
-    } else {
-      // Default sorting by featured
-      result.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
-    }
-    
-    setFilteredProperties(result);
-  }, [filters, sortBy]);
+  // Fetch properties with filtering
+  const { data: properties = [], isLoading } = useQuery({
+    queryKey: ['properties', filters, sortBy],
+    queryFn: () => fetchProperties({
+      filters: {
+        priceRange: filters.priceRange,
+        beds: filters.beds,
+        baths: filters.baths,
+        homeType: filters.homeType,
+        minSqft: filters.minSqft,
+        amenities: filters.amenities,
+        status: filters.status,
+      },
+      sortBy,
+    }),
+  });
 
   const handleFilterChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
@@ -116,7 +67,7 @@ const Properties = () => {
           <div>
             <h1 className="text-3xl font-semibold">Properties</h1>
             <p className="text-muted-foreground mt-2">
-              {filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'} available
+              {isLoading ? "Loading properties..." : `${properties.length} ${properties.length === 1 ? 'property' : 'properties'} available`}
             </p>
           </div>
           
@@ -189,7 +140,25 @@ const Properties = () => {
           
           {/* Property Listings */}
           <div className="flex-1">
-            {filteredProperties.length === 0 ? (
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, index) => (
+                  <div key={index} className="bg-card border border-border rounded-xl overflow-hidden animate-pulse">
+                    <div className="w-full h-48 bg-muted"></div>
+                    <div className="p-5 space-y-3">
+                      <div className="h-5 bg-muted rounded w-3/4"></div>
+                      <div className="h-4 bg-muted rounded w-1/2"></div>
+                      <div className="h-6 bg-muted rounded w-1/3"></div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="h-4 bg-muted rounded"></div>
+                        <div className="h-4 bg-muted rounded"></div>
+                        <div className="h-4 bg-muted rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : properties.length === 0 ? (
               <div className="text-center py-16 bg-secondary/30 rounded-xl">
                 <h3 className="text-xl font-medium mb-2">No properties found</h3>
                 <p className="text-muted-foreground">
@@ -202,7 +171,7 @@ const Properties = () => {
                   ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
                   : 'space-y-6'
               }>
-                {filteredProperties.map(property => (
+                {properties.map(property => (
                   <PropertyCard key={property.id} property={property} />
                 ))}
               </div>

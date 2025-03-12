@@ -36,6 +36,66 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          address: Json
+          amenities: string[]
+          baths: number
+          beds: number
+          created_at: string
+          description: string
+          featured: boolean | null
+          id: string
+          images: string[]
+          location: Json
+          price: number
+          sqft: number
+          status: string
+          title: string
+          type: string
+          user_id: string | null
+          year_built: number
+        }
+        Insert: {
+          address: Json
+          amenities: string[]
+          baths: number
+          beds: number
+          created_at?: string
+          description: string
+          featured?: boolean | null
+          id?: string
+          images: string[]
+          location: Json
+          price: number
+          sqft: number
+          status: string
+          title: string
+          type: string
+          user_id?: string | null
+          year_built: number
+        }
+        Update: {
+          address?: Json
+          amenities?: string[]
+          baths?: number
+          beds?: number
+          created_at?: string
+          description?: string
+          featured?: boolean | null
+          id?: string
+          images?: string[]
+          location?: Json
+          price?: number
+          sqft?: number
+          status?: string
+          title?: string
+          type?: string
+          user_id?: string | null
+          year_built?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

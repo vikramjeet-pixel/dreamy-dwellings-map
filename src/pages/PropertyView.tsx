@@ -1,45 +1,34 @@
 
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import PropertyDetails from "@/components/PropertyDetails";
 import PropertyCard from "@/components/PropertyCard";
 import { Property } from "@/utils/types";
-import { properties } from "@/utils/mockData";
+import { fetchPropertyById, fetchSimilarProperties } from "@/utils/propertyService";
 import { ArrowLeft, Home } from "lucide-react";
 
 const PropertyView = () => {
   const { id } = useParams<{ id: string }>();
-  const [property, setProperty] = useState<Property | null>(null);
   const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: property, isLoading, error } = useQuery({
+    queryKey: ['property', id],
+    queryFn: () => fetchPropertyById(id || ''),
+    enabled: !!id,
+  });
 
   useEffect(() => {
-    // Simulate API call to fetch property details
-    setLoading(true);
-    
-    setTimeout(() => {
-      const foundProperty = properties.find(p => p.id === id) || null;
-      setProperty(foundProperty);
-      
-      if (foundProperty) {
-        // Find similar properties (same type or city)
-        const similar = properties
-          .filter(p => 
-            p.id !== id && 
-            (p.type === foundProperty.type || 
-             p.address.city === foundProperty.address.city)
-          )
-          .slice(0, 3);
-        
-        setSimilarProperties(similar);
-      }
-      
-      setLoading(false);
-    }, 500);
-  }, [id]);
+    // Fetch similar properties when the main property is loaded
+    if (property) {
+      fetchSimilarProperties(property).then(data => {
+        setSimilarProperties(data);
+      });
+    }
+  }, [property]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -53,7 +42,7 @@ const PropertyView = () => {
     );
   }
 
-  if (!property) {
+  if (error || !property) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />

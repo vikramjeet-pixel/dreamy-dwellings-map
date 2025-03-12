@@ -34,3 +34,14 @@ export interface FilterOptions {
   amenities: string[];
   status: string[];
 }
+
+export interface User {
+  id: string;
+  email: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  session: any;
+  loading: boolean;
+}
