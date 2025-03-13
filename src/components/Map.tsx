@@ -75,7 +75,6 @@ export default function Map({ properties }: MapProps) {
         zoom={12}
         style={{ height: "100%", width: "100%" }}
         zoomControl={true}
-        attributionControl={true}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
