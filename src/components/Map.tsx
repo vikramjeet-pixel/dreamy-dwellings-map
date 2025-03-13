@@ -1,103 +1,41 @@
-
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Property } from "@/utils/types";
 import { Home, X, ChevronLeft, ChevronRight } from "lucide-react";
 import PropertyCard from "./PropertyCard";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-
-// Fix for default marker icons in Leaflet with webpack/vite
-// This is needed because the default markers reference images from the leaflet directory
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
-
-// Create custom marker icon
-const defaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-});
-
-// Set default icon for all markers
-L.Marker.prototype.options.icon = defaultIcon;
 
 interface MapProps {
   properties: Property[];
-}
-
-// Component to automatically adjust map view based on properties
-function MapBoundsAdjuster({ properties }: { properties: Property[] }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (properties.length > 0) {
-      const bounds = L.latLngBounds(
-        properties.map(property => [
-          property.location.lat,
-          property.location.lng
-        ])
-      );
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  }, [properties, map]);
-  
-  return null;
 }
 
 export default function Map({ properties }: MapProps) {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showInfoCard, setShowInfoCard] = useState(false);
 
-  // Calculate center based on properties or use a default
-  const getDefaultCenter = () => {
-    if (properties.length > 0) {
-      return [
-        properties[0].location.lat,
-        properties[0].location.lng
-      ] as [number, number];
-    }
-    return [34.0522, -118.2437] as [number, number]; // Default: Los Angeles
-  };
-
-  const handleMarkerClick = (property: Property) => {
+  const handlePropertyClick = (property: Property) => {
     setSelectedProperty(property);
     setShowInfoCard(true);
   };
 
   return (
     <div className="relative w-full h-[calc(100vh-5rem)] rounded-xl overflow-hidden border border-border">
-      {/* OpenStreetMap container */}
-      <MapContainer
-        center={getDefaultCenter()}
-        zoom={12}
-        style={{ height: "100%", width: "100%" }}
-        zoomControl={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+      {/* Basic placeholder for the map */}
+      <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
+        <Home className="w-12 h-12 text-gray-400 mb-4" />
+        <p className="text-muted-foreground">Map functionality has been removed</p>
         
-        {properties.map((property) => (
-          <Marker
-            key={property.id}
-            position={[property.location.lat, property.location.lng]}
-            eventHandlers={{
-              click: () => handleMarkerClick(property),
-            }}
-          >
-            <Popup>
-              <div className="text-sm font-medium">{property.title}</div>
-              <div className="text-muted-foreground">${property.price.toLocaleString()}</div>
-            </Popup>
-          </Marker>
-        ))}
-        
-        <MapBoundsAdjuster properties={properties} />
-      </MapContainer>
+        {/* Grid to display property cards instead of map */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 overflow-auto mt-4 w-full max-h-[70%]">
+          {properties.map((property) => (
+            <div 
+              key={property.id}
+              onClick={() => handlePropertyClick(property)}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+            >
+              <PropertyCard property={property} />
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Selected property info card */}
       {selectedProperty && showInfoCard && (
