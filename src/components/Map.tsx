@@ -3,22 +3,64 @@ import { useEffect, useRef, useState } from "react";
 import { Property } from "@/utils/types";
 import { Home, X, ChevronLeft, ChevronRight } from "lucide-react";
 import PropertyCard from "./PropertyCard";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix for default marker icons in Leaflet with webpack/vite
+// This is needed because the default markers reference images from the leaflet directory
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+// Create custom marker icon
+const defaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+});
+
+// Set default icon for all markers
+L.Marker.prototype.options.icon = defaultIcon;
 
 interface MapProps {
   properties: Property[];
 }
 
+// Component to automatically adjust map view based on properties
+function MapBoundsAdjuster({ properties }: { properties: Property[] }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (properties.length > 0) {
+      const bounds = L.latLngBounds(
+        properties.map(property => [
+          property.location.lat,
+          property.location.lng
+        ])
+      );
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }, [properties, map]);
+  
+  return null;
+}
+
 export default function Map({ properties }: MapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showInfoCard, setShowInfoCard] = useState(false);
 
-  // This is a simplified map implementation
-  // In a real app, you would use a library like Mapbox GL JS or Google Maps
-  useEffect(() => {
-    // Here would be map initialization code
-    console.log("Map initialized with properties:", properties);
-  }, [properties]);
+  // Calculate center based on properties or use a default
+  const getDefaultCenter = () => {
+    if (properties.length > 0) {
+      return [
+        properties[0].location.lat,
+        properties[0].location.lng
+      ] as [number, number];
+    }
+    return [34.0522, -118.2437] as [number, number]; // Default: Los Angeles
+  };
 
   const handleMarkerClick = (property: Property) => {
     setSelectedProperty(property);
@@ -26,43 +68,41 @@ export default function Map({ properties }: MapProps) {
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-5rem)] bg-muted/20 rounded-xl overflow-hidden border border-border">
-      {/* Map container */}
-      <div ref={mapRef} className="w-full h-full">
-        {/* Placeholder map visualization */}
-        <div className="absolute inset-0 flex items-center justify-center bg-secondary/50">
-          <div className="text-center p-6 max-w-md">
-            <Home className="mx-auto h-12 w-12 mb-4 text-primary/70" />
-            <h3 className="text-lg font-medium mb-2">Map View</h3>
-            <p className="text-muted-foreground">
-              This is a placeholder for the interactive map. In a real implementation, 
-              this would display an interactive map with property markers using 
-              a service like Mapbox GL JS or Google Maps.
-            </p>
-          </div>
-        </div>
-
-        {/* Property markers (simplified for demonstration) */}
-        <div className="absolute inset-0 p-6">
-          {properties.map((property) => (
-            <button
-              key={property.id}
-              className="absolute bg-primary text-primary-foreground p-2 rounded-full transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition-transform"
-              style={{
-                left: `${30 + Math.random() * 60}%`,
-                top: `${30 + Math.random() * 40}%`
-              }}
-              onClick={() => handleMarkerClick(property)}
-            >
-              <Home className="h-4 w-4" />
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="relative w-full h-[calc(100vh-5rem)] rounded-xl overflow-hidden border border-border">
+      {/* OpenStreetMap container */}
+      <MapContainer
+        center={getDefaultCenter()}
+        zoom={12}
+        style={{ height: "100%", width: "100%" }}
+        zoomControl={true}
+        attributionControl={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        {properties.map((property) => (
+          <Marker
+            key={property.id}
+            position={[property.location.lat, property.location.lng]}
+            eventHandlers={{
+              click: () => handleMarkerClick(property),
+            }}
+          >
+            <Popup>
+              <div className="text-sm font-medium">{property.title}</div>
+              <div className="text-muted-foreground">${property.price.toLocaleString()}</div>
+            </Popup>
+          </Marker>
+        ))}
+        
+        <MapBoundsAdjuster properties={properties} />
+      </MapContainer>
 
       {/* Selected property info card */}
       {selectedProperty && showInfoCard && (
-        <div className="absolute bottom-0 left-0 right-0 md:right-auto md:w-[400px] glass-card p-4 animate-slide-in">
+        <div className="absolute bottom-0 left-0 right-0 md:right-auto md:w-[400px] glass-card p-4 animate-slide-in bg-card/95 backdrop-blur-sm z-[1000]">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-medium">{selectedProperty.title}</h3>
             <button 

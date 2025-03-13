@@ -92,6 +92,7 @@ const MapView = () => {
               <button
                 onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
                 className="p-2 rounded-full hover:bg-secondary"
+                aria-label={mobileFiltersOpen ? "Close filters" : "Open filters"}
               >
                 {mobileFiltersOpen ? (
                   <X className="h-5 w-5" />
